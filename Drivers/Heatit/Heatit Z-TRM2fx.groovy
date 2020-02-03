@@ -61,7 +61,7 @@
 
 
 metadata {
-	definition (name: "heatit Z-Trm2", namespace: "heatit", author: "magnusstam") {
+	definition (name: "heatit Z-Trm2 JAK", namespace: "heatit", author: "magnusstam") {
 		capability "Actuator"
 		capability "Temperature Measurement"
 		capability "Thermostat"
@@ -724,6 +724,20 @@ def zwaveEvent(hubitat.zwave.commands.crc16encapv1.Crc16Encap cmd) {
     }
 }
 
+//// Jakob Ryden Feb 2nd ////
+// investigate method members
+
+// entire object hierarchy
+def PrintAllMembers(Object obj) {
+	logging( "\n:: All members of " + obj)
+    if (obj == null) {
+        logging("obj is null, return")
+        return
+    }
+    obj.properties.each { k,v -> logging( k+" : "+v) }
+}
+
+//// Jakob Ryden Feb 2nd ////
 
 private logging(text, type = "debug") {
     if (settings.logging == "true") {
@@ -759,9 +773,18 @@ private encap(Map encapMap) {
 }
 
 private encap(hubitat.zwave.Command cmd) {
-    if (zwaveInfo.zw.contains("s")) {
+    // Jakob debug <-- no zwaveInfo defined.
+    // try unsecured for now!
+    // should: test /support multicap?!
+    def fallback=true
+
+    PrintAllMembers(zwaveInfo)
+    if (zwaveInfo != null && zwaveInfo.zw.contains("s")) {
         secEncap(cmd)
-    } else if (zwaveInfo.cc.contains("56")){
+    } else if (zwaveInfo != null && zwaveInfo.cc.contains("56")){
+        crcEncap(cmd)
+    } else if (fallback == true){
+        logging(" - falling back to crc encap // Jakob")
         crcEncap(cmd)
     } else {
         logging("${device.displayName} - no encapsulation supported for command: $cmd","info")
